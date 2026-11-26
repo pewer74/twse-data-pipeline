@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 def run_pipeline() -> None:
+    # 確保資料庫與資料表在一開始就建立完成
+    init_db(DB_PATH)
+
     today_str = get_taipei_today().strftime("%Y-%m-%d")
     logger.info("啟動台股盤後數據管線 | 執行日期（台北時間）: %s", today_str)
 
@@ -60,7 +63,6 @@ def run_pipeline() -> None:
     merged_df.insert(0, "trade_date", latest_trading_date)
 
     # 4. 寫入 SQLite（Upsert）
-    init_db(DB_PATH)
     affected = upsert_daily_metrics(DB_PATH, merged_df)
     logger.info("成功寫入/更新 %d 筆資料至 %s", affected, DB_PATH)
     logger.info("\n%s", merged_df.to_string(index=False))

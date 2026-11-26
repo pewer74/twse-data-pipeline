@@ -4,7 +4,6 @@ on:
   schedule:
     # UTC 07:30 = 台灣時間 (UTC+8) 15:30，週一至週五執行
     - cron: "30 7 * * 1-5"
-  # 允許在 GitHub 網頁介面上隨時手動觸發測試
   workflow_dispatch:
 
 permissions:
@@ -35,12 +34,16 @@ jobs:
 
       - name: Commit and push updated SQLite database
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add data/twse_stocks.db
-          if git diff --staged --quiet; then
-            echo "資料庫無變更（可能為假日休市），略過 Commit。"
+          if [ -f "data/twse_stocks.db" ]; then
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add data/twse_stocks.db
+            if git diff --staged --quiet; then
+              echo "資料庫無變更，略過 Commit。"
+            else
+              git commit -m "chore(data): update TWSE daily metrics ($(TZ='Asia/Taipei' date +'%Y-%m-%d'))"
+              git push
+            fi
           else
-            git commit -m "chore(data): update TWSE daily metrics ($(TZ='Asia/Taipei' date +'%Y-%m-%d'))"
-            git push
+            echo "尚未產生資料庫檔案，略過 Commit。"
           fi
